@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tempometer Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#1A1A18; --surface:#242424; --surface2:#2D2D2A; --line:#3A3A36; --input:#444440;
+  --fg:#F0F5FC; --muted:#B4B8B2; --accent:#A6532D; --accent-ink:#E8B69C;
+  --z-low:#AAB4C0; --z-good:#6FD0A8; --z-warn:#E5B95A; --z-bad:#F08A9C;
+  --b-low:#5C6670; --b-good:#4FB08A; --b-warn:#D6A646; --b-bad:#D9667A;
+  --good-bg:#1F4D3F; --warn-bg:#4A3A1A; --bad-bg:#4A2530; --low-bg:#2A3037;
+  --font:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --head:"Lexend","Atkinson Hyperlegible",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:17px;line-height:1.5;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));-webkit-text-size-adjust:100%}
+.app{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--head);margin:0;font-weight:700;line-height:1.2;text-wrap:balance}
+h1{font-size:1.2rem}h2{font-size:1.15rem}h3{font-size:1.02rem}
+p{margin:0}
+[hidden]{display:none!important}
+.top{display:flex;align-items:center;gap:12px}
+.logo{width:44px;height:44px;border-radius:12px;background:var(--accent);display:grid;place-items:center;font-family:var(--head);font-weight:700;flex:none}
+.sub{color:var(--muted);font-size:.9rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.eyebrow{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
+.hint{font-size:.9rem;color:var(--muted)}
+button{font:inherit;color:inherit}
+.btn{min-height:56px;padding:0 20px;border-radius:14px;border:1px solid transparent;background:var(--accent);font-weight:700;font-size:1.1rem;cursor:pointer;width:100%}
+.btn.ghost{background:transparent;border-color:var(--line)}
+.btn[disabled]{opacity:.45;cursor:default}
+.btn.stop{background:#5A2D2D}
+:focus-visible{outline:3px solid var(--accent-ink);outline-offset:2px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+.seg button{min-height:48px;border:0;border-radius:10px;background:transparent;cursor:pointer;font-weight:700;color:var(--muted);padding:6px 8px;line-height:1.25}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--fg)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{min-height:44px;min-width:60px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);cursor:pointer;font-weight:700}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
+.note{border-radius:12px;padding:12px;background:var(--surface2);border:1px solid var(--line)}
+.note.warn{background:var(--warn-bg);border-color:#6a5524}
+.note.bad{background:var(--bad-bg);border-color:#733646}
+.check{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.check input{width:28px;height:28px;flex:none;accent-color:var(--accent);margin-top:2px}
+
+.meter{border-radius:18px;padding:18px;border:1px solid var(--line);background:var(--surface);transition:background .3s}
+.meter.low{background:var(--low-bg)}.meter.good{background:var(--good-bg)}.meter.warn{background:var(--warn-bg)}.meter.bad{background:var(--bad-bg)}
+.big{font-family:var(--head);font-weight:700;font-size:5.2rem;line-height:1;font-variant-numeric:tabular-nums}
+.big small{font-size:1rem;font-weight:500;color:var(--muted);margin-left:8px}
+.zl{font-weight:700;font-size:1.15rem;margin-top:6px}
+.meter.low .zl{color:var(--z-low)}.meter.good .zl{color:var(--z-good)}.meter.warn .zl{color:var(--z-warn)}.meter.bad .zl{color:var(--z-bad)}
+.gauge{position:relative;height:14px;border-radius:7px;display:flex;overflow:hidden;margin:18px 0 30px}
+.gauge i{display:block;height:100%}
+.gauge .m{position:absolute;top:-6px;width:4px;height:26px;background:var(--fg);border-radius:2px;transform:translateX(-50%);transition:left .4s}
+.ticks{position:relative;height:0}
+.ticks span{position:absolute;top:-22px;transform:translateX(-50%);font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--surface2);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font-family:var(--head);font-size:1.3rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.82rem;color:var(--muted)}
+.lvl{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden}
+.lvl i{display:block;height:100%;width:0;background:var(--accent-ink);transition:width .08s}
+.sum{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--surface2)}
+.sum i{display:block;height:100%}
+ol.steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:8px}
+.live-txt{font-size:.95rem;color:var(--muted);min-height:3em;max-height:6em;overflow:auto}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="logo" aria-hidden="true">06</div>
+    <div><h1>Tempometer Live</h1><div class="sub">Zie en voel hoe snel je praat</div></div>
+  </header>
+
+  <section class="card" id="setup">
+    <div class="eyebrow">Stap 1: kies hoe hij luistert</div>
+    <div class="seg" role="group" aria-label="Manier van meten">
+      <button id="mA" aria-pressed="true">Privé<br><span class="sub" style="color:inherit;font-weight:400">blijft op je telefoon</span></button>
+      <button id="mB" aria-pressed="false">Nauwkeurig<br><span class="sub" style="color:inherit;font-weight:400">via Google</span></button>
+    </div>
+    <div class="note" id="infoA">
+      <p><b>Privé.</b> De telefoon luistert alleen naar het ritme van je stem. Er wordt geen woord herkend en er gaat niets het internet op. Het getal is een schatting.</p>
+    </div>
+    <div class="note bad" id="infoB" hidden>
+      <p><b>Via Google.</b> Je stem wordt naar Google gestuurd om er tekst van te maken. Gebruik dit alleen voor gesprekken zonder persoonlijke of gevoelige informatie. Het telt echte woorden, dus het is nauwkeuriger.</p>
+    </div>
+    <label class="check note warn" id="okBox" hidden>
+      <input type="checkbox" id="ok">
+      <span>Ik heb gecontroleerd: in dit gesprek zit geen persoonlijke of gevoelige informatie.</span>
+    </label>
+    <div>
+      <div style="font-weight:700;margin-bottom:6px">Hoe lang kijkt hij terug?</div>
+      <div class="chips" id="win"></div>
+      <p class="hint" style="margin-top:6px">Een korter venster reageert sneller. Een langer venster is rustiger.</p>
+    </div>
+    <label class="check"><input type="checkbox" id="vib" checked><span>Trillen als ik te snel ga (rood)</span></label>
+    <button class="btn" id="go">Start</button>
+    <p class="hint" id="err" role="alert" hidden></p>
+  </section>
+
+  <section id="live" hidden class="app" style="gap:16px">
+    <div class="meter low" id="meter" aria-live="polite">
+      <div class="big"><span id="wpm">--</span><small>woorden per minuut</small></div>
+      <div class="zl" id="zl">Even meten...</div>
+      <div id="gauge"></div>
+      <div class="lvl" aria-hidden="true"><i id="lv"></i></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="tm">00:00</b><span>Tijd</span></div>
+      <div class="stat"><b id="st2">--</b><span id="st2l">Stilte</span></div>
+    </div>
+    <div class="live-txt" id="lt" hidden></div>
+    <button class="btn stop" id="stop">Stop</button>
+  </section>
+
+  <section class="card" id="result" hidden>
+    <div class="eyebrow">Klaar</div>
+    <div id="resTxt"></div>
+    <div class="sum" id="sum" aria-hidden="true"></div>
+    <p class="hint">Groen is rustig, oranje net te snel, rood te snel, grijs erg rustig.</p>
+    <button class="btn ghost" id="again">Nog een keer</button>
+  </section>
+
+  <section class="card" id="cal" hidden>
+    <div class="eyebrow">Alleen bij Privé</div>
+    <h3>Ijken op jouw stem</h3>
+    <p class="hint">Eenmalig. Zo kent de telefoon jouw woorden. Tik op Start ijken en lees de tekst hardop, in je gewone tempo. Tik daarna op Klaar.</p>
+    <div class="note" id="calTxt" style="font-size:1.1rem;line-height:1.7"></div>
+    <button class="btn ghost" id="calGo">Start ijken</button>
+    <p class="hint" id="calRes"></p>
+  </section>
+
+  <section class="card">
+    <h3>Zo gebruik je het</h3>
+    <ol class="steps">
+      <li>Zet de telefoon met de microfoon naar je toe, op ongeveer een armlengte.</li>
+      <li>Tik op Start en geef toestemming voor de microfoon.</li>
+      <li>Praat. Kijk naar de kleur of voel de trilling.</li>
+      <li>De microfoon hoort ook de ander. De meter klopt het best als jij praat.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+var KEY="praatlab-live-v1";
+var S={mode:"A",win:30,k:1.2,vib:true};
+try{var r=JSON.parse(localStorage.getItem(KEY)||"{}");if(r.k>0.7&&r.k<3.5)S.k=r.k;if([20,30,60].indexOf(r.win)>-1)S.win=r.win}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({k:S.k,win:S.win}))}catch(e){}}
+
+var MIN=60,MAX=220;
+function zone(w){if(w<110)return {k:"low",l:"Erg rustig"};if(w<=150)return {k:"good",l:"Rustig, goed zo"};if(w<=170)return {k:"warn",l:"Net te snel, pauzeer na je zin"};return {k:"bad",l:"Te snel, adem uit"}}
+function pct(v){return Math.max(0,Math.min(100,(v-MIN)/(MAX-MIN)*100))}
+function gaugeHTML(v){
+  var segs=[[MIN,110,"--b-low"],[110,150,"--b-good"],[150,170,"--b-warn"],[170,MAX,"--b-bad"]];
+  var h='<div class="gauge">';
+  segs.forEach(function(s){h+='<i style="width:'+((s[1]-s[0])/(MAX-MIN)*100)+'%;background:var('+s[2]+')"></i>'});
+  h+='<span class="m" id="mk" style="left:'+pct(v||MIN)+'%"></span></div><div class="ticks">';
+  [110,150,170].forEach(function(t){h+='<span style="left:'+pct(t)+'%">'+t+'</span>'});
+  return h+'</div>';
+}
+function countWords(t){return (String(t).trim().match(/\S+/g)||[]).length}
+
+/* keuzes */
+function setMode(m){
+  S.mode=m;$("#mA").setAttribute("aria-pressed",String(m==="A"));$("#mB").setAttribute("aria-pressed",String(m==="B"));
+  $("#infoA").hidden=m!=="A";$("#infoB").hidden=m!=="B";$("#okBox").hidden=m!=="B";$("#cal").hidden=m!=="A";
+  gate();
+}
+function gate(){$("#go").disabled=(S.mode==="B"&&!$("#ok").checked)}
+$("#mA").addEventListener("click",function(){setMode("A")});
+$("#mB").addEventListener("click",function(){setMode("B")});
+$("#ok").addEventListener("change",gate);
+var winBox=$("#win");
+[20,30,60].forEach(function(s){var b=document.createElement("button");b.className="chip";b.textContent=s+" s";b.setAttribute("aria-pressed",String(S.win===s));
+  b.addEventListener("click",function(){S.win=s;save();[].forEach.call(winBox.children,function(x){x.setAttribute("aria-pressed","false")});b.setAttribute("aria-pressed","true")});winBox.appendChild(b)});
+$("#vib").addEventListener("change",function(){S.vib=$("#vib").checked});
+
+/* wake lock en trillen */
+var wake=null;
+function keepAwake(on){try{if(on){if(navigator.wakeLock&&!wake)navigator.wakeLock.request("screen").then(function(l){wake=l;l.addEventListener("release",function(){wake=null})}).catch(function(){})}else if(wake){wake.release();wake=null}}catch(e){}}
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+
+/* sessie */
+var run={on:false,t0:0,ticker:null,events:[],zones:{low:0,good:0,warn:0,bad:0},last:null,badSince:0,lastBuzz:0,wpmSum:0,wpmN:0};
+var A={stream:null,ac:null,an:null,buf:null,iv:null,env:0,hist:[],thr:Infinity,p2:-120,p1:-120,minSince:0,lastPeak:0,peaks:0,calOn:false,calPeaks:0,silent:0,steps:0};
+var B={rec:null,prevN:0,text:""};
+
+function windowCount(now){
+  var w=S.win*1000,from=now-w,c=0;
+  for(var i=run.events.length-1;i>=0;i--){var e=run.events[i];if(e.t<from)break;c+=e.n}
+  return c;
+}
+function showError(msg){var e=$("#err");e.textContent=msg;e.hidden=!msg}
+function startSession(){
+  showError("");
+  run.on=true;run.events=[];run.zones={low:0,good:0,warn:0,bad:0};run.last=null;run.badSince=0;run.lastBuzz=0;run.wpmSum=0;run.wpmN=0;run.t0=performance.now();
+  $("#gauge").innerHTML=gaugeHTML(null);
+  $("#setup").hidden=true;$("#cal").hidden=true;$("#result").hidden=true;$("#live").hidden=false;
+  $("#wpm").textContent="--";$("#zl").textContent="Even meten...";$("#meter").className="meter low";
+  $("#st2l").textContent=S.mode==="A"?"Stilte":"Woorden";$("#lt").hidden=S.mode!=="B";$("#lt").textContent="";
+  keepAwake(true);
+  run.ticker=setInterval(tick,500);
+}
+function stopSession(showResult){
+  if(!run.on)return;run.on=false;clearInterval(run.ticker);keepAwake(false);
+  stopA();stopB();
+  $("#live").hidden=true;$("#setup").hidden=false;$("#cal").hidden=S.mode!=="A";gate();
+  if(showResult){
+    var tot=run.zones.low+run.zones.good+run.zones.warn+run.zones.bad;
+    if(tot<2){$("#resTxt").innerHTML='<p>Te kort om iets te zeggen. Praat minstens 15 seconden.</p>';$("#sum").innerHTML=""}
+    else{
+      var avg=Math.round(run.wpmSum/run.wpmN),z=zone(avg);
+      $("#resTxt").innerHTML='<p>Gemiddeld <b>'+avg+' woorden per minuut</b>. '+z.l+'.</p>';
+      var cols={low:"--b-low",good:"--b-good",warn:"--b-warn",bad:"--b-bad"},h="";
+      ["low","good","warn","bad"].forEach(function(k){h+='<i style="width:'+(run.zones[k]/tot*100)+'%;background:var('+cols[k]+')"></i>'});
+      $("#sum").innerHTML=h;
+    }
+    $("#result").hidden=false;
+  }
+}
+function tick(){
+  var now=performance.now(),el=now-run.t0,s=Math.floor(el/1000);
+  $("#tm").textContent=("0"+Math.floor(s/60)).slice(-2)+":"+("0"+(s%60)).slice(-2);
+  if(S.mode==="A"){
+    $("#st2").textContent=A.steps?Math.round(A.silent/A.steps*100)+"%":"--";
+  }
+  var winMs=Math.min(S.win*1000,el);
+  if(el<10000){return}
+  var units=windowCount(now),words=S.mode==="A"?units/S.k:units;
+  var wpm=Math.round(words/(winMs/60000));
+  if(S.mode==="B")$("#st2").textContent=String(run.events.reduce(function(a,e){return a+e.n},0));
+  if(!isFinite(wpm))return;
+  var z=zone(wpm);run.last=wpm;run.zones[z.k]++;run.wpmSum+=wpm;run.wpmN++;
+  $("#wpm").textContent=wpm;$("#zl").textContent=z.l;$("#meter").className="meter "+z.k;
+  var mk=$("#mk");if(mk)mk.style.left=pct(wpm)+"%";
+  if(z.k==="bad"){
+    if(!run.badSince)run.badSince=now;
+    if(S.vib&&now-run.badSince>4000&&now-run.lastBuzz>20000){buzz([200,100,200]);run.lastBuzz=now}
+  }else run.badSince=0;
+}
+
+/* ---- Manier A: ritme van je stem, alleen op de telefoon ---- */
+function startA(){
+  var md=navigator.mediaDevices;
+  if(!md||!md.getUserMedia){showError("Deze browser geeft geen toegang tot de microfoon. Open de pagina in Chrome.");return Promise.reject()}
+  return md.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}}).then(function(st){
+    A.stream=st;A.ac=new (window.AudioContext||window.webkitAudioContext)();
+    var src=A.ac.createMediaStreamSource(st),hp=A.ac.createBiquadFilter(),lp=A.ac.createBiquadFilter();
+    hp.type="highpass";hp.frequency.value=250;lp.type="lowpass";lp.frequency.value=3500;
+    A.an=A.ac.createAnalyser();A.an.fftSize=1024;src.connect(hp);hp.connect(lp);lp.connect(A.an);
+    A.buf=new Float32Array(A.an.fftSize);A.env=-90;A.hist=[];A.thr=Infinity;A.p2=A.p1=-120;A.minSince=0;A.lastPeak=0;A.silent=0;A.steps=0;
+    A.iv=setInterval(aStep,20);A.n=0;
+  });
+}
+function pctile(arr,p){var a=arr.slice().sort(function(x,y){return x-y});return a[Math.min(a.length-1,Math.floor(p*a.length))]}
+function aStep(){
+  A.an.getFloatTimeDomainData(A.buf);
+  var s=0;for(var i=0;i<A.buf.length;i++)s+=A.buf[i]*A.buf[i];
+  var db=20*Math.log10(Math.sqrt(s/A.buf.length)+1e-8);
+  var cur=A.env=0.6*A.env+0.4*db;
+  A.hist.push(cur);if(A.hist.length>400)A.hist.shift();
+  A.n=(A.n||0)+1;A.steps++;
+  if(A.n%25===0&&A.hist.length>100){var f=pctile(A.hist,0.1),t=pctile(A.hist,0.95);A.thr=(t-f>10)?f+0.3*(t-f):Infinity}
+  var lvl=Math.max(0,Math.min(100,(cur+75)/55*100));$("#lv").style.width=lvl+"%";
+  if(cur<A.thr)A.silent++;
+  A.minSince=Math.min(A.minSince,cur);
+  var now=performance.now();
+  if(A.p1>A.p2&&A.p1>=cur&&A.p1>A.thr&&A.p1-A.minSince>=3&&now-A.lastPeak>110){
+    A.lastPeak=now;A.minSince=cur;
+    if(run.on)run.events.push({t:now,n:1});
+    if(A.calOn)A.calPeaks++;
+  }
+  A.p2=A.p1;A.p1=cur;
+}
+function stopA(){
+  if(A.iv){clearInterval(A.iv);A.iv=null}
+  if(A.stream){A.stream.getTracks().forEach(function(t){t.stop()});A.stream=null}
+  if(A.ac){try{A.ac.close()}catch(e){}A.ac=null}
+  $("#lv").style.width="0";
+}
+
+/* ---- Manier B: echte woorden via spraakherkenning (Google) ---- */
+function startB(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){showError("Spraakherkenning werkt niet in deze browser. Open de pagina in Chrome op je telefoon.");return Promise.reject()}
+  var rec=new SR();B.rec=rec;B.prevN=0;
+  rec.lang="nl-NL";rec.continuous=true;rec.interimResults=true;
+  rec.onstart=function(){B.prevN=0};
+  rec.onresult=function(e){
+    var txt="";for(var i=0;i<e.results.length;i++)txt+=e.results[i][0].transcript+" ";
+    var n=countWords(txt),d=n-B.prevN;B.prevN=n;
+    if(d>0&&run.on)run.events.push({t:performance.now(),n:d});
+    var lt=$("#lt");if(lt){lt.hidden=false;lt.textContent=txt.trim().split(/\s+/).slice(-14).join(" ")}
+  };
+  rec.onerror=function(e){
+    if(e.error==="no-speech"||e.error==="aborted")return;
+    var m={"not-allowed":"De microfoon is niet toegestaan. Zet hem aan in de sitegegevens van Chrome.","service-not-allowed":"Spraakherkenning is geblokkeerd op deze telefoon.","network":"Geen internetverbinding voor de spraakherkenning."}[e.error]||("Er ging iets mis: "+e.error);
+    showError(m);stopSession(false);
+  };
+  rec.onend=function(){if(run.on&&B.rec){setTimeout(function(){try{if(run.on&&B.rec)B.rec.start()}catch(x){}},150)}};
+  try{rec.start()}catch(x){showError("Starten lukt niet. Probeer het nog eens.");return Promise.reject()}
+  return Promise.resolve();
+}
+function stopB(){var r=B.rec;B.rec=null;if(r){try{r.onend=null;r.stop()}catch(e){}}}
+
+$("#go").addEventListener("click",function(){
+  var p=S.mode==="A"?startA():startB();
+  p.then(function(){startSession()}).catch(function(e){
+    if(e&&e.name==="NotAllowedError")showError("De microfoon is niet toegestaan. Tik op het slotje naast het adres, kies Machtigingen en zet Microfoon aan.");
+    else if(e&&e.name)showError("De microfoon werkt niet: "+e.name);
+  });
+});
+$("#stop").addEventListener("click",function(){stopSession(true)});
+$("#again").addEventListener("click",function(){$("#result").hidden=true;window.scrollTo(0,0)});
+document.addEventListener("visibilitychange",function(){if(run.on&&!document.hidden)keepAwake(true)});
+
+/* ---- ijken (alleen Privé) ---- */
+var CAL="Ik sta vroeg op en zet eerst koffie. Daarna loop ik even door het huis om te kijken of alles goed staat. Op mijn werk begin ik met een korte ronde langs de verdiepingen. Ik controleer de vergaderkamers en de pantry.";
+$("#calTxt").textContent=CAL;
+$("#calGo").addEventListener("click",function(){
+  var b=$("#calGo");
+  if(!A.calOn){
+    showError("");
+    startA().then(function(){A.calOn=true;A.calPeaks=0;b.textContent="Klaar";$("#calRes").textContent="Ik luister... lees de tekst hardop."}).catch(function(){showError("De microfoon werkt niet. Controleer de toestemming.")});
+  }else{
+    A.calOn=false;var n=countWords(CAL),pk=A.calPeaks;stopA();b.textContent="Start ijken";
+    if(pk<n*0.6){$("#calRes").textContent="Ik hoorde te weinig. Probeer het nog eens, dichter bij de microfoon en iets duidelijker."}
+    else{S.k=Math.max(0.8,Math.min(3,pk/n));save();$("#calRes").textContent="Klaar. Jij zegt gemiddeld "+S.k.toFixed(2).replace(".",",")+" klank per woord. Dit is bewaard."}
+  }
+});
+setMode("A");
+$("#gauge").innerHTML=gaugeHTML(null);
+})();
+</script>
+</body>
+</html>
